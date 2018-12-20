@@ -1,0 +1,6 @@
+flask
+flask_cors
+flask_httpauth
+flask_sqlalchemy
+bs4
+requests
