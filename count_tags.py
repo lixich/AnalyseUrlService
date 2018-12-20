@@ -5,7 +5,7 @@ import requests
 def make_request(url):
     try:
         r = requests.get(url)
-        if r:
+        if r.ok:
             soup = BeautifulSoup(r.text, 'html.parser')
             return soup
     except:

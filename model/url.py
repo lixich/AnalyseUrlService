@@ -37,7 +37,7 @@ def get_url(url_id):
 
 @app_url.route('/', methods = ['POST'])
 def create_url():
-    if not request.json:
+    if not request.json or 'Value' not in request.json.keys():
         abort(400)
     tags_dict = count_tags.get(request.json['Value'])
     tags = str(json.dumps(tags_dict)) if tags_dict else ''
@@ -45,31 +45,34 @@ def create_url():
     url = Url(request.json['Value'], tags, True, is_valid)
     db.session.add(url)
     db.session.commit()
-    return jsonify(dict(url.serialize()))
+    return jsonify(dict(url.serialize())), 201
 
 @app_url.route('/<int:url_id>', methods=['PUT'])
 def update_url(url_id):
     url = Url.query.filter_by(Id=url_id).first()
     if not url:
         abort(404)
-    if not request.json:
+    if not request.json or not set(['Value', 'IsValid', 'IsDone']).issubset(set(request.json.keys())):
         abort(400)
-    url.Value = request.json['Value']
-    url.IsDone = request.json['IsDone']
-    url.IsValid = request.json['IsValid']
     tags = {}
     tags_key = set(dict(request.json).keys()) - (set(inspect(url).attrs.keys()))
     for tag_key in tags_key:
-        tags[tag_key] = request.json[tag_key]
+        if str(request.json[tag_key]).isdigit():
+            tags[tag_key] = int(request.json[tag_key])
+        else:
+            abort(400)
+    url.Value = request.json['Value']
     url.Tags = str(json.dumps(tags))
+    url.IsDone = request.json['IsDone']
+    url.IsValid = request.json['IsValid']
     db.session.commit()
-    return jsonify(dict(url.serialize()))
+    return jsonify(dict(url.serialize())), 201
 
 @app_url.route('/<int:url_id>', methods=['DELETE'])
 def delete_url(url_id):
     url = Url.query.filter_by(Id=url_id).first()
     if url:
         Url.query.filter_by(Id=url_id).delete()
-        return jsonify({'Result': True})
+        return '', 204
     else:
         abort(404)
