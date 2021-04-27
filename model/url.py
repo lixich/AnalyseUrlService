@@ -35,14 +35,18 @@ def get_url(url_id):
         abort(404)
     return jsonify(dict(url.serialize()))
 
-@app_url.route('/', methods = ['POST'])
+@app_url.route('/', methods = ['POST', 'GET'])
 def create_url():
-    if not request.json or 'Value' not in request.json.keys():
+    if request.json and 'Value' in request.json.keys():
+        site = request.json['Value']
+    elif request.values and 'Value' in request.values:
+        site = request.values['Value']
+    else:
         abort(400)
-    tags_dict = count_tags.get(request.json['Value'])
+    tags_dict = count_tags.get(site)
     tags = str(json.dumps(tags_dict)) if tags_dict else ''
     is_valid = bool(tags)
-    url = Url(request.json['Value'], tags, True, is_valid)
+    url = Url(site, tags, True, is_valid)
     db.session.add(url)
     db.session.commit()
     return jsonify(dict(url.serialize())), 201
